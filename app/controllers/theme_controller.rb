@@ -23,8 +23,13 @@ class ThemeController < ApplicationController
   caches_page :show, if: Proc.new {|ctrl| ctrl.cache_css}
 
   def show
+    Rails.logger.debug self.class.ancestors.select{|a| a.method_defined? :perform_caching}
+    Rails.logger.debug "perform caching: #{self.class.perform_caching}"
+    Rails.logger.debug "caching allowed: #{caching_allowed?}"
+    Rails.logger.debug "cache store: #{self.class.cache_store}"
     render text: @theme.render_css(@file), content_type: 'text/css'
   rescue Sass::SyntaxError => exc
+    Rails.logger.error exc
     self.cache_css = false
     render text: @theme.error_response(exc)
     expire_page name: params[:name], file: params[:file]
@@ -39,6 +44,7 @@ class ThemeController < ApplicationController
     self.cache_css = true
     [params[:name], *params[:file]].each do |param|
       if param =~ /_refresh/
+        Rails.logger.debug 'refreshing css cache'
         param.sub!('_refresh','')
         self.cache_css = false
       end
