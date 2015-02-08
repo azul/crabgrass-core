@@ -19,17 +19,11 @@ class Groups::StructuresController < Groups::SettingsController
   def create
     if group_type == :committee
       raise_denied unless may_create_committee?
-      @committee = Committee.new
-      assign_params_to(@committee, params[:committee])
-      @committee.save!
-      @group.add_committee!(@committee)
+      @committee = @group.committees.add! committee_params
       redirect_to group_url(@committee)
     elsif group_type == :council
       raise_denied unless may_create_council?
-      @council = Council.new
-      assign_params_to(@council, params[:council])
-      @council.save!
-      @group.add_committee!(@council)
+      @council = @group.add_council! council_params
       redirect_to group_url(@council)
     end
     success
@@ -54,11 +48,16 @@ class Groups::StructuresController < Groups::SettingsController
     end
   end
 
-  def assign_params_to(structure, options)
-    options.slice(:name, :full_name, :language).each do |k, v|
-      structure.public_send("#{k}=", v) if v.present?
-    end
-    structure.created_by = current_user
+  def committee_params
+    params.require(:committee).
+      permit(:name, :full_name, :language).
+      merge created_by: current_user
+  end
+
+  def council_params
+    params.require(:council).
+      permit(:name, :full_name, :language).
+      merge created_by: current_user
   end
 
 end

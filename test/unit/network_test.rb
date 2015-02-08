@@ -62,7 +62,7 @@ class NetworkTest < ActiveSupport::TestCase
     group   = groups(:rainbow)
     delegation = groups(:warm)
 
-    network.add_committee!(Committee.create(name: 'spokescouncil'), true)
+    network.add_council!(name: 'spokescouncil')
     network.add_group!(group, delegation)
 
   end
@@ -92,8 +92,7 @@ class NetworkTest < ActiveSupport::TestCase
     user = users(:gerrard)
     group = groups(:true_levellers)
 
-    committee = Committee.create! name: 'fai+committee'
-    parent_network.add_committee!(committee)
+    committee = parent_network.committees.add! name: 'committee'
 
     assert user.member_of?(group)
     assert child_network.groups.include?(group)

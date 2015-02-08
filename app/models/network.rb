@@ -35,7 +35,9 @@ class Network < Group
     return unless initial_member_group
     if initial_member_group.is_a? Network
       errors.add(:initial_member_group, :networks_may_not_join_nteworks.t)
-    elsif initial_member_group.parent.is_a? Network
+    end
+    if initial_member_group.respond_to?(:parent) &&
+      initial_member_group.parent.is_a?(Network)
       errors.add(:initial_member_group, :network_committees_may_not_join_networks.t)
     end
   end

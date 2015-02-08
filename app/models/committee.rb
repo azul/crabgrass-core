@@ -1,5 +1,6 @@
 class Committee < Group
 
+  belongs_to :parent, class_name: 'Group', readonly: true
 
   ##
   ## NAMING
@@ -63,35 +64,6 @@ class Committee < Group
     else
       super
     end
-  end
-
-  protected
-
-  #
-  # Override the way create_permissions is called in Groups.
-  # For committees and councils, we call create_permissions
-  # and destroy_permissions explicitly once it is added to a
-  # parent group.
-  #
-  def call_create_permissions
-  end
-  def call_destroy_permissions
-  end
-
-  ##
-  ## ORGANIZATIONAL
-  ##
-
-  private
-
-  before_destroy :remove_from_parent
-  def remove_from_parent
-    parent.remove_committee!(self)
-    true
-  end
-
-  def parent=(p)
-    raise 'call group.add_committee! instead'
   end
 
 end

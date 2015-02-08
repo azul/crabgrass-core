@@ -5,8 +5,7 @@ class CouncilTest < ActiveSupport::TestCase
 
   def test_add_council
     network = groups(:cnt)
-    council = Council.create!(name: 'council')
-    network.add_committee!(council)
+    council = network.add_council!(name: 'council')
     network.reload
     council.reload
     assert_equal 'Network', network.type
@@ -21,8 +20,7 @@ class CouncilTest < ActiveSupport::TestCase
     # only one user added
     g.add_user!(users(:blue))
 
-    council = Council.create!(name: 'council')
-    g.add_committee!(council)
+    council = g.add_council!(name: 'council')
 
     council.reload
     assert council.full_council_powers?
@@ -34,8 +32,7 @@ class CouncilTest < ActiveSupport::TestCase
     g.add_user!(users(:blue))
     g.add_user!(users(:yellow))
 
-    council = Council.create!(name: 'council')
-    g.add_committee!(council)
+    council = g.add_council!(name: 'council')
 
     council.reload
     assert !council.full_council_powers?
@@ -46,8 +43,7 @@ class CouncilTest < ActiveSupport::TestCase
     g.add_user!(users(:yellow))
     g.add_user!(users(:blue))
 
-    council = Council.create!(name: 'council')
-    g.add_committee!(council)
+    council = g.add_council!(name: 'council')
 
     council.add_user!(users(:blue))
 
@@ -60,8 +56,7 @@ class CouncilTest < ActiveSupport::TestCase
     g.add_user!(users(:yellow))
     g.add_user!(users(:blue))
 
-    council = Council.create!(name: 'council')
-    g.add_committee!(council)
+    council = g.add_council!(name: 'council')
 
     council.add_user!(users(:blue))
     council.destroy_by(users(:blue))
@@ -73,22 +68,19 @@ class CouncilTest < ActiveSupport::TestCase
 
   def test_remove_council_from_network
     network = groups(:cnt)
-    council = Council.create!(name: 'council')
+    council = network.add_council!(name: 'council')
     council.add_user!(users(:blue))
-    network.add_committee!(council)
     council.destroy_by(users(:blue))
 
     network.reload
     assert_nil network.council
-
   end
 
   def test_destroying_group_destroys_council
     g = Group.create name: 'boosh'
     g.add_user!(users(:blue))
 
-    council = Council.create!(name: 'council')
-    g.add_committee!(council)
+    council = g.add_council!(name: 'council')
 
     council.add_user!(users(:blue))
     g.destroy_by(users(:blue))

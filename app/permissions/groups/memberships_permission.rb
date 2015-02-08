@@ -26,7 +26,7 @@ module Groups::MembershipsPermission
   def may_create_membership?(group=@group, user=@user)
     logged_in? and
     group and
-    group.parent and
+    group.committee? and
     current_user.may?(:admin, group) and
     ((user && user.member_of?(group.parent)) || user.nil?)
   end

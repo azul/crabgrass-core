@@ -274,18 +274,6 @@ class Group < ActiveRecord::Base
     self.destroy
   end
 
-  protected
-
-  # make destroy protected
-  # callers should use destroy_by
-  # TODO: this brakes Group.destroy_all - which is helpful for cleanup.
-  # I see how it can be useful to hide this from the api.
-  # But maybe we should do so by having a clear api and not by breaking
-  # the default rails api.
-  def destroy
-    super
-  end
-
   ##
   ## RELATIONSHIP TO ASSOCIATED DATA
   ##
@@ -302,24 +290,6 @@ class Group < ActiveRecord::Base
     self.networks.each do |network|
       Group.increment_counter(:version, network.id)
     end
-  end
-
-  ##
-  ## PERMISSIONS
-  ##
-
-  #
-  # These callbacks are responsible for setting up and tearing down
-  # the permissions for groups. The actual methods are defined in
-  # config/permissions.rb. Committees override these callbacks.
-  #
-  after_create :call_create_permissions
-  def call_create_permissions
-    create_permissions
-  end
-  after_destroy :call_destroy_permissions
-  def call_destroy_permissions
-    destroy_permissions
   end
 
   ##

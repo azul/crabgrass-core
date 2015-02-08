@@ -36,11 +36,7 @@ class RequestToCreateCouncil < Request
   alias_method :may_destroy?, :may_create?
 
   def after_approval
-    council = Council.new
-    council.name = :council.t
-    council.created_by = created_by
-    council.save!
-    group.add_committee!(council)
+    council = group.add_council! name: :council.t, created_by: created_by
     council.add_user!(created_by)
     # FIXME: when this code runs in tests, the user needs to be added. But
     #   in real life User.current has already been made a member by the

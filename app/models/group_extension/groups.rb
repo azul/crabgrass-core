@@ -13,16 +13,29 @@ module GroupExtension::Groups
 
       has_many :federatings, dependent: :destroy
       has_many :networks, through: :federatings
-      belongs_to :council, class_name: 'Group'
+      has_one :council, class_name: 'Council', foreign_key: 'parent_id',
+        dependent: :destroy
 
+      has_many :committees, foreign_key: 'parent_id', dependent: :destroy do
+        def add!(*args)
+          committee = self.create! *args
+          proxy_association.owner.org_structure_changed
+          proxy_association.owner.save!
+          # no idea why this is needed:
+          proxy_association.reset
+          committee
+        end
+
+        def remove!(committee)
+          self.delete(committee)
+          proxy_association.owner.org_structure_changed
+          proxy_association.owner.save!
+          proxy_association.reset
+        end
+
+      end
       # Committees are children! They must respect their parent group.
-      # This uses crabgrass_acts_as_tree, which allows callbacks.
-      acts_as_tree(
-        order: 'name',
-        after_add: :org_structure_changed,
-        after_remove: :org_structure_changed
-      )
-      alias_method :committees, :children
+      alias_method :children, :committees
 
       has_many :real_committees,
         foreign_key: 'parent_id',
@@ -101,56 +114,20 @@ module GroupExtension::Groups
 
   module InstanceMethods
 
-    # Adds a new committee or makes an existing committee be the council (if
-    # the make_council argument is set). No other method of adding committees
-    # should be used.
-    def add_committee!(committee, make_council=false)
-      make_council = true if committee.council?
-      committee.parent_id = self.id
-      committee.parent_name_changed
-      if make_council
-        committee = add_council(committee)
-      elsif self.council == committee
-        # downgrade the council to a committee
-        committee.destroy_permissions
-        committee.type = "Committee"
-        committee.becomes(Committee)
-        self.council = nil
+    def add_council!(attributes = {})
+      # creating a new council for a new group
+      # the council members will be able to remove other members
+      if self.memberships.count < 2
+        attributes[:full_council_powers] = true
       end
-      committee.save!
 
+      new_council = create_council! attributes
       self.org_structure_changed
+      # let's remove this redundant column at some point
+      self.council_id = new_council.id
       self.save!
-      self.committees.reset
-
-      # make sure we actually have the right class.
-      Group.find(committee.id).create_permissions
+      new_council
     end
-
-    def add_council!(council)
-      add_committee!(council, true)
-    end
-
-    protected
-
-    # Removes a committee. No other method should be used.
-    # We use this when destroying the committee - do not
-    # use it on its own as you'll have a committee without
-    # a group afterwards.
-    def remove_committee!(committee)
-      committee.destroy_permissions
-      committee.parent_id = nil
-      if council_id == committee.id
-        self.council = nil
-        committee.type = "Committee"
-      end
-      committee.save!
-      self.org_structure_changed
-      self.save!
-      self.committees.reset
-    end
-
-    public
 
     # returns an array of all children ids and self id (but not parents).
     # this is used to determine if a group has access to a page.
@@ -182,25 +159,6 @@ module GroupExtension::Groups
       self.council != nil
     end
 
-    private
-
-    def add_council(committee)
-      if has_a_council?
-        council.update_attribute(:type, "Committee")
-      end
-      committee.type = "Council"
-      committee.becomes(Council)
-      self.council = committee
-      self.save!
-
-      # creating a new council for a new group
-      # the council members will be able to remove other members
-      if self.memberships.count < 2
-        committee.full_council_powers = true
-      end
-
-      return committee
-    end
   end
 
 end

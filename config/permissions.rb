@@ -155,6 +155,7 @@ CastleGates.define do
 
     protected
 
+    after_create :create_permissions
     def create_permissions
       grant_access! self => :all
       grant_access! public: [:view, :request_membership]
@@ -169,6 +170,7 @@ CastleGates.define do
       end
     end
 
+    after_destroy :destroy_permissions
     def destroy_permissions
       if council?
         parent.grant_access! parent => :admin

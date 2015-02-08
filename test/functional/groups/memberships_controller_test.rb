@@ -18,8 +18,7 @@ class Groups::MembershipsControllerTest < ActionController::TestCase
   end
 
   def test_destroy
-    @council = FactoryGirl.create(:committee)
-    @group.add_council! @council
+    @council = @group.add_council! name: 'council'
     @council.add_user! @user
     other_user  = FactoryGirl.create(:user)
     @group.add_user! other_user

@@ -9,23 +9,27 @@ class CommitteeTest < ActiveSupport::TestCase
     #@c2 = groups[:cold]
   end
 
-  def test_creation_and_deletion
+  def test_creation_increments_version
     g = Group.create name: 'riseup'
-    c1 = Committee.create name: 'finance'
-    c2 = Committee.create name: 'food'
 
     assert_difference 'Group.find(%d).version'%g.id do
-      g.add_committee!(c1)
+      c1 = g.committees.add! name: 'finance'
     end
     assert_difference 'Group.find(%d).version'%g.id do
-      g.add_committee!(c2)
+      c2 = g.committees.add! name: 'food'
     end
+  end
+
+  def test_creation_and_deletion
+    g = Group.create name: 'riseup'
+    c1 = g.committees.add! name: 'finance'
+    c2 = g.committees.add! name: 'food'
     g.reload
     assert_equal g, c1.parent, "committee's parent should match group"
 
     assert_difference 'Group.find(%d).version'%g.id do
       assert_difference 'Group.find(%d).committees.count'%g.id, -1 do
-        c1.destroy_by(users(:red))
+        g.committees.remove! c1
       end
     end
     g.destroy_by(users(:red))
@@ -33,9 +37,7 @@ class CommitteeTest < ActiveSupport::TestCase
   end
 
   def test_destroy_group
-    assert_nothing_raised do
-      Group.find(groups(:warm).id)
-    end
+    Group.find(groups(:warm).id)
     groups(:rainbow).destroy_by(users(:red))
     assert_raises ActiveRecord::RecordNotFound, 'committee should be destroyed' do
       Group.find(groups(:warm).id)
@@ -44,10 +46,8 @@ class CommitteeTest < ActiveSupport::TestCase
 
   def test_membership
     g = Group.create name: 'riseup'
-    c1 = Committee.create name: 'finance'
-    c2 = Committee.create name: 'food'
-    g.add_committee!(c1)
-    g.add_committee!(c2)
+    c1 = g.committees.add! name: 'finance'
+    c2 = g.committees.add! name: 'food'
     user = users(:kangaroo)
 
     assert(!user.member_of?(g), 'user should not be member yet')
@@ -66,8 +66,7 @@ class CommitteeTest < ActiveSupport::TestCase
 
   def test_naming
     g = Group.create name: 'riseup'
-    c = Committee.new name: 'outreach'
-    g.add_committee!(c)
+    c = g.committees.add! name: 'outreach'
     assert_equal 'riseup+outreach', c.full_name, 'committee full name should be in the form <groupname>+<committeename>'
     c.name = 'legal'
     c.save
@@ -79,11 +78,12 @@ class CommitteeTest < ActiveSupport::TestCase
   end
 
   def test_create
-    g = Committee.create
+    g = Committee.new
     assert !g.valid?, 'committee with no name should not be valid'
   end
 
   def test_associations
+    # FIXME
     # current_user_permissions needs a current user
     User.current = users(:blue)
     assert check_associations(Committee)
@@ -92,8 +92,7 @@ class CommitteeTest < ActiveSupport::TestCase
 
   def test_member_of_committee_but_not_of_group_cannot_access_group_pages
     g = Group.create name: 'riseup'
-    c = Committee.create name: 'outreach'
-    g.add_committee!(c)
+    c = g.committees.add! name: 'outreach'
     user = users(:gerrard)
     other_user = users(:blue)
     c.add_user!(user)
@@ -117,8 +116,7 @@ class CommitteeTest < ActiveSupport::TestCase
 
   def test_cant_pester_private_committee
     g = Group.create name: 'riseup'
-    c = Committee.create name: 'outreach'
-    g.add_committee!(c)
+    c = g.committees.add! name: 'outreach'
 
     u = User.create login: 'user'
 
@@ -128,9 +126,8 @@ class CommitteeTest < ActiveSupport::TestCase
   def test_can_pester_public_committee
     g = Group.create name: 'riseup'
     g.grant_access! public: [:view, :pester, :see_committees]
-    c = Committee.create name: 'outreach'
+    c = g.committees.add! name: 'outreach'
     c.grant_access! public: [:view, :pester]
-    g.add_committee!(c)
 
     u = User.create login: 'user'
 

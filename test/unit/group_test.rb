@@ -99,23 +99,21 @@ class GroupTest < ActiveSupport::TestCase
 
   def test_councils
     group = groups(:rainbow)
-    committee = groups(:cold)
     blue = users(:blue)
     red  = users(:red)
-
-    assert_equal committee.parent, group
-    assert blue.direct_member_of?(committee)
-    assert !red.direct_member_of?(committee)
 
     assert red.may?(:admin, group)
     assert blue.may?(:admin, group)
     assert !group.has_a_council?
 
-    assert_nothing_raised do
-      group.add_council!(committee)
-    end
+    council = group.add_council! name: 'cold-council'
+    council.add_user! blue
     red.clear_cache
     blue.clear_cache
+    assert_equal council.parent, group
+    assert blue.direct_member_of?(council)
+    assert !red.direct_member_of?(council)
+
     assert !red.may?(:admin, group)
     assert blue.may?(:admin, group)
     assert group.has_a_council?
