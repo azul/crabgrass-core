@@ -12,17 +12,17 @@ module UserExtension::Users
     base.send :include, InstanceMethods
 
     base.instance_eval do
-      serialize_as IntArray, :friend_id_cache, :foe_id_cache
+      serialize_as IntArray, :friend_ids, :foe_id_cache
 
       initialized_by :update_contacts_cache,
-        :friend_id_cache, :foe_id_cache
+        :friend_ids, :foe_id_cache
 
       ##
       ## PEERS
       ##
 
       def self.peers_of(user)
-        where('users.id in (?)', user.peer_id_cache)
+        where('users.id in (?)', user.peer_ids)
       end
 
       ##
@@ -56,27 +56,27 @@ module UserExtension::Users
 
       # same result as user.friends, but chainable with other named scopes
       def self.friends_of(user)
-        where('users.id in (?)', user.friend_id_cache)
+        where('users.id in (?)', user.friend_ids)
       end
 
       def self.friends_or_peers_of(user)
-        where('users.id in (?)', user.friend_id_cache + user.peer_id_cache)
+        where('users.id in (?)', user.friend_ids + user.peer_ids)
       end
 
       # neither friends nor peers
       # used for autocomplete when we preloaded the friends and peers
       def self.strangers_to(user)
         where 'users.id NOT IN (?)',
-          user.friend_id_cache + user.peer_id_cache + [user.id]
+          user.friend_ids + user.peer_ids + [user.id]
       end
 
       ##
       ## CACHE
       ##
 
-      serialize_as IntArray, :friend_id_cache, :foe_id_cache, :peer_id_cache
-      initialized_by :update_contacts_cache, :friend_id_cache, :foe_id_cache
-      initialized_by :update_membership_cache, :peer_id_cache
+      serialize_as IntArray, :friend_ids, :foe_id_cache, :peer_ids
+      initialized_by :update_contacts_cache, :friend_ids, :foe_id_cache
+      initialized_by :update_membership_cache, :peer_ids
 
     end
   end
@@ -197,12 +197,12 @@ module UserExtension::Users
 
     def peer_of?(user)
       id = user.instance_of?(Integer) ? user : user.id
-      peer_id_cache.include?(id)
+      peer_ids.include?(id)
     end
 
     def friend_of?(user)
       id = user.instance_of?(Integer) ? user : user.id
-      friend_id_cache.include?(id)
+      friend_ids.include?(id)
     end
     alias :contact_of? :friend_of?
 

@@ -13,7 +13,6 @@
 #
 # These permissions are common to both users and groups.
 #
-#   view    -- show the profile 'home' page for the entity.
 #   pester  -- send an entity notifications, typically about pages.
 #   burden  -- share with an entity a page
 #   spy     -- track activity of the entity, like join grp or when logged in
@@ -37,11 +36,6 @@ CastleGates.define do
   castle User do
 
     # entity gates
-    gate 1, :view,
-      :default_open => :friend_of_user,
-      :label => :may_view_label,
-      :info => :may_view_description
-
     gate 2, :pester,
       :default_open => :user,
       :label => :may_pester_label,
@@ -75,7 +69,7 @@ CastleGates.define do
     #
     after_create :create_permissions
     def create_permissions
-      grant_access! friends: [:view, :pester, :burden, :comment, :see_contacts, :see_groups, :request_contact]
+      grant_access! friends: [:pester, :burden, :comment, :see_contacts, :see_groups, :request_contact]
       grant_access! peers: [:pester, :burden, :comment, :request_contact]
       grant_access! public: [:pester, :request_contact]
     end
@@ -138,7 +132,6 @@ CastleGates.define do
 
   castle Group do
     # entity gates
-    gate 1, :view
     gate 2, :pester
     gate 3, :burden
     gate 4, :spy
@@ -179,9 +172,6 @@ CastleGates.define do
     #
     def after_revoke_access(holder, gates)
       if holder == :public
-        if gates.include?(:view)
-          revoke_access! :public => [:see_members, :see_committees, :see_networks, :request_membership]
-        end
         if gates.include?(:request_membership)
           revoke_access! :public => :join
         end

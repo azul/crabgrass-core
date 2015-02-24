@@ -1,0 +1,38 @@
+permissions on group:
+ * visibility
+   * members only
+   * all users
+   * public
+
+permissions on user:
+ * visibility
+   * friends (& peers in groups)
+   * all users
+   * public
+
+ * request contact
+   * nobody
+   * peers only
+   * all users
+
+policies (users)
+ * burdon (share page)
+   * nobody ?
+   * friends only
+   * friends and peers
+   * all users
+ * pester (notify)
+   * nobody
+   * friends only
+   * friends and peers
+   * all users
+ * message
+   * nobody
+   * friends only
+   * all users
+
+policies (group)
+ * share_policy 
+   * members only
+   * all users
+
