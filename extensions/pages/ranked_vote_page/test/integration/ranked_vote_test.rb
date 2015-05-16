@@ -46,6 +46,19 @@ class RankedVoteTest < JavascriptIntegrationTest
     assert_content 'top pick'
   end
 
+  def test_public_page
+    option, description = add_possibility
+    click_page_tab 'Show results'
+    click_link option
+    assert_content description
+    click_on 'Public'
+    assert_selector '#public_checkbox.check_on_16'
+    path_to_reload = current_path
+    click_on "Logout #{@user.login}"
+    visit path_to_reload
+    assert_content @page.summary
+  end
+
   def vote
     option_li = find('#sort_list_unvoted li.possible', match: :first)
     option_li.drag_to find('#sort_list_voted')

@@ -1,23 +1,20 @@
 class RankedVotePageController < Pages::BaseController
   before_filter :fetch_poll
-  before_filter :find_possibles, only: [:show, :edit]
+  before_filter :edit_blank_polls, only: :show
 
   def show
-    # we need to specify the whole page_url not just the action here
-    # because we might have ended up here from the DispatchController.
-    redirect_to page_url(@page, action: :edit) unless @poll.possibles.any?
-
-    @who_voted_for = @poll.tally
-    @sorted_possibles = @poll.ranked_candidates.collect { |id| @poll.possibles.find(id)}
+    @presentation = RankedVote::Presentation.new(@poll)
+    if may_edit_page?
+      @own_choice = RankedVote::UsersChoice.new(@poll, current_user)
+    end
   end
 
   def edit
+    @own_choice = RankedVote::UsersChoice.new(@poll, current_user)
   end
 
   def print
-    @who_voted_for = @poll.tally
-    @sorted_possibles = @poll.ranked_candidates.collect { |id| @poll.possibles.find(id)}
-
+    @presentation = RankedVote::Presentation.new(@poll)
     render layout: "printer-friendly"
   end
 
@@ -33,19 +30,12 @@ class RankedVotePageController < Pages::BaseController
     @options.show_tabs = true
   end
 
-  def find_possibles
-    @possibles_voted = []
-    @possibles_unvoted = []
-
-    @poll.possibles.each do |pos|
-      if pos.votes.by_user(current_user).first
-        @possibles_voted << pos
-      else
-        @possibles_unvoted << pos
-      end
+  def edit_blank_polls
+    # we need to specify the whole page_url not just the action here
+    # because we might have ended up here from the DispatchController.
+    if @poll.possibles.blank? && logged_in?
+      redirect_to page_url(@page, action: :edit)
     end
-
-    @possibles_voted = @possibles_voted.sort_by { |pos| pos.votes.by_user(current_user).first.try.value || -1 }
   end
 
 end

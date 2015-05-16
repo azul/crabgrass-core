@@ -1,6 +1,8 @@
 # adds a newly created task to the bottom of the pending tasks
 if @possible.persisted?
-  page.insert_html :bottom, 'sort_list_unvoted', :partial => 'possible', :locals => {:possible => @possible}
+  page.insert_html :bottom, 'sort_list_unvoted',
+    partial: '/ranked_vote/possible',
+    :locals => {:possible => @possible}
 end
 
 update_alert_messages(page)

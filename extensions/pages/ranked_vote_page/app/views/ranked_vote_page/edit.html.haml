@@ -9,16 +9,16 @@
       = :ranked_vote_instructions.t
   %h3=I18n.t 'vote.voted_on'
   %ul#sort_list_voted.list-group
-    = render partial: 'ranked_vote_possibles/possible', collection: @possibles_voted
-    %li#none_voted.list-group-item{style: @possibles_voted.present? && "display:none"}
+    = render partial: 'ranked_vote/possible', collection: @own_choice.voted
+    %li#none_voted.list-group-item{style: @own_choice.voted? && "display:none"}
       = :none.t
   %h3=I18n.t 'vote.not_voted_on'
   %ul#sort_list_unvoted.list-group
-    = render partial: 'ranked_vote_possibles/possible', collection: @possibles_unvoted
-    %li#none_unvoted.list-group-item{style: @possibles_unvoted.present? && "display:none"}
+    = render partial: 'ranked_vote/possible', collection: @own_choice.unvoted
+    %li#none_unvoted.list-group-item{style: @own_choice.lacks_votes? && "display:none"}
       = :none.t
   .gap-ui
-    = render 'ranked_vote_possibles/new'
+    = render 'ranked_vote/possibles/new'
 
   = sortable_element 'sort_list_voted', handle: 'handle',
     containment: ['sort_list_voted', 'sort_list_unvoted'],

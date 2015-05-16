@@ -1,25 +1,8 @@
 %ul.list-group
-  - @sorted_possibles.each do |possible|
-    - winner = 'winner' if (@poll.winners.any? and @poll.winners.include? possible.id)
-    %li.list-group-item
-      .badge= @poll.rank(possible.id)
-      %span= possible_name(possible)
-      - if winner.present?
-        &nbsp;
-        %span.label.label-success
-          = :top_pick.t
-      .space-ui-top{id: details_id(possible), style: "display: none"}
-        .p= possible.description_html
-        - if @who_voted_for[possible.id].respond_to?('join')
-          %em
-            = :first_choice_of.t
-            #{@who_voted_for[possible.id].join(', ')}
+  = render @presentation.ranks
 
-- if logged_in? and current_user.may? :edit, @page and @possibles_unvoted.any?
+- if @own_choice.present? && @own_choice.lacks_votes?
   .p= I18n.t 'vote.you_have_not_ranked'
   %ul.list-group
-    - @possibles_unvoted.each do |possible|
-      %li.list-group-item
-        %div= possible_name(possible)
-        .space-ui-top{id: details_id(possible), style: "display: none"}
-          = possible.description_html
+    = render partial: 'ranked_vote/possibles/unvoted',
+      collection: @own_choice.unvoted

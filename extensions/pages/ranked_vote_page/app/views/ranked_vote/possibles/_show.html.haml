@@ -7,10 +7,6 @@
 .pull-right
   = link_to I18n.t(:edit), edit_url, icon:'pencil', class: 'edit', remote: true, method: :get
 
-- if possible.description.present?
-  = link_to_function possible.name, "Element.toggle('#{details_id}')", class: 'dotted'
-  %div.space-ui-top{:id => details_id, :style => 'display: none'}
-    = possible.description_html
-- else
-  =h possible.name
-
+= possible_toggle(possible)
+.space-ui-top{id: details_id(possible), style: 'display: none'}
+  = possible.description_html

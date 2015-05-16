@@ -4,7 +4,8 @@ possible_show_id = "#{possible_id}_show"
 spinner_id       = spinner_id(possible_edit_id)
 
 # update the possible_show div with the updated possible data
-page.replace_html possible_show_id, :partial => 'possible_show', :locals => {:possible => @possible}
+page.replace_html possible_show_id,
+  partial: 'ranked_vote/possibles/show', :locals => {:possible => @possible}
 page.show possible_show_id
 
 # hide the edit box
