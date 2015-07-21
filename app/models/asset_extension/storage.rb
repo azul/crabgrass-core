@@ -221,11 +221,10 @@ module AssetExtension # :nodoc:
     def add_symlink
       unless File.exist?(File.dirname(public_filename))
         real_private_path = Pathname.new(private_filename).realpath.dirname
-        real_public_path  = Pathname.new(public_storage).realpath
         public_to_private = real_private_path.relative_path_from(real_public_path)
-        real_public_path += "#{path_id}"
+        original = real_public_path + "#{path_id}"
         #puts "FileUtils.ln_s(#{public_to_private}, #{real_public_path})"
-        FileUtils.ln_s(public_to_private, real_public_path)
+        FileUtils.ln_s(public_to_private, original)
       end
     end
 
@@ -279,5 +278,12 @@ module AssetExtension # :nodoc:
       end
     end
 
+    def real_public_path
+      Pathname.new(public_storage).realpath
+    rescue Errno::ENOENT
+      FileUtils.mkdir_p public_storage
+      Rails.logger.warn "WARNING: #{public_storage} was missing... created."
+      retry
+    end
   end
 end
