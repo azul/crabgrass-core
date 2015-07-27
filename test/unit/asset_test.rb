@@ -113,7 +113,13 @@ class AssetTest < ActiveSupport::TestCase
     assert !File.symlink?(File.dirname(@asset.public_filename)), 'dir of public file should NOT be a symlink'
   end
 
-  def test_thumbnails
+  def test_thumbnail_generation_handled_by_thumbnails
+    @asset = FactoryGirl.create :image_asset
+    @asset.thumbnails.each{|thumb| thumb.expects(:generate)}
+    @asset.generate_thumbnails
+  end
+
+  def test_thumbnail_integration
     start_thumb_count = Thumbnail.count
     @asset = FactoryGirl.create :image_asset
     assert @asset.thumbdefs.any?, 'asset should have thumbdefs'
@@ -177,11 +183,7 @@ class AssetTest < ActiveSupport::TestCase
    assert read_file('image.png') == File.read(@asset.private_filename), 'full_filename should be the uploaded_data'
   end
 
-  def test_dimensions
-    if !GraphicsMagickTransmogrifier.new.available?
-      puts "\GraphicMagick converter is not available. Either GraphicMagick is not installed or it can not be started. Skipping AssetTest#test_dimensions."
-      return
-    end
+  def test_thumbnail_size_after_new_upload
     @asset = FactoryGirl.create :small_image_asset
     assert_equal 64, @asset.width, 'width must match file'
     assert_equal 64, @asset.height, 'height must match file'
@@ -189,10 +191,20 @@ class AssetTest < ActiveSupport::TestCase
     @asset.save
     assert_equal 333, @asset.width, 'width must match after new upload'
     assert_equal 500, @asset.height, 'height must match after new upload'
+  end
 
+  def test_thumbnail_size_guess
+    @asset = FactoryGirl.create :image_asset
+    assert_equal 333, @asset.width, 'width must match after new upload'
+    assert_equal 500, @asset.height, 'height must match after new upload'
     assert_equal 43, @asset.thumbnail(:small).width, 'guess width should match actual'
     assert_equal 64, @asset.thumbnail(:small).height, 'guess height should match actual'
+  end
 
+
+  def test_dimension_integration
+    skip_if_graphics_magick_missing
+    @asset = FactoryGirl.create :image_asset
     @asset.generate_thumbnails
     assert_equal 43, @asset.thumbnail(:small).width, 'actual width should be 43'
     assert_equal 64, @asset.thumbnail(:small).height, 'actual height should be 64'
@@ -204,23 +216,21 @@ class AssetTest < ActiveSupport::TestCase
     assert_equal ["133","200"], Media.dimensions(@asset.thumbnail(:medium).private_filename)
   end
 
-  def test_doc
-    # must have LO installed
-    if !LibreOfficeTransmogrifier.new.available?
-      skip "LibreOffice converter is not available. Either LibreOffice is not installed or it can not be started. Skipping AssetTest#test_doc."
-      return
-    end
+  def test_odt_integration
+    skip_if_libre_office_missing
+    skip_if_graphics_magick_missing
 
-    # must have GM installed
-    if !GraphicsMagickTransmogrifier.new.available?
-      skip "GraphicMagick converter is not available. Either GraphicMagick is not installed or it can not be started. Skipping AssetTest#test_doc."
-      return
-    end
+    @asset = Asset.create_from_params uploaded_data: upload_data('test.odt')
+    assert_equal 'DocAsset', @asset.class.name
+    @asset.generate_thumbnails
+  end
+
+  def test_doc_integration
+    skip_if_libre_office_missing
+    skip_if_graphics_magick_missing
 
     @asset = Asset.create_from_params uploaded_data: upload_data('msword.doc')
-    assert_equal TextAsset, @asset.class, 'asset should be a TextAsset'
-    assert_equal 'TextAsset', @asset.versions.earliest.versioned_type, 'version should by of type TextAsset'
-
+    assert_equal 'TextAsset', @asset.class.name
     @asset.generate_thumbnails
 
     # pdf's are the basis for the other thumbnails. So let's check that first.
@@ -306,7 +316,28 @@ class AssetTest < ActiveSupport::TestCase
 
   protected
 
-  def debug
-    puts `find #{ASSET_PRIVATE_STORAGE}` if true
+  def skip_if_libre_office_missing
+    # must have LO installed
+    if !LibreOfficeTransmogrifier.new.available?
+      skip "LibreOffice converter is not available. Either LibreOffice is not installed or it can not be started. Skipping AssetTest#test_doc."
+      return
+    end
   end
+
+  def skip_if_graphics_magick_missing
+    # must have GM installed
+    if !GraphicsMagickTransmogrifier.new.available?
+      skip "GraphicMagick converter is not available. Either GraphicMagick is not installed or it can not be started. Skipping AssetTest#test_doc."
+      return
+    end
+  end
+
+  def transmogrifier_for(options = {})
+    Media::Transmogrifier.stubs(:new).with(all_of(
+      has_key(:input_file),
+      has_key(:output_file),
+      has_entries(options)
+    ))
+  end
+
 end
