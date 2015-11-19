@@ -7,7 +7,7 @@
 
 .login_form
   = form_tag(login_path, id: "entry") do
-    - cache current_language do
+    - cache [current_language, request.original_fullpath] do
       .cookie_warning.alert.alert-danger{style: "display: none"}
         = :cookie_disabled_warning.t
       %div

@@ -7,9 +7,12 @@ class GroupInviteTest < IntegrationTest
     @request = RequestToJoinUsViaEmail.create created_by: users(:blue),
       email: 'sometest@email.test',
       requestable: @group
-    visit "/me/requests/#{@request.id}?code=#{@request.code}"
+    url = "/me/requests/#{@request.id}?code=#{@request.code}"
+    visit url
+    assert_content 'Login Required'
     signup
     click_on 'Approve'
+    assert_content 'Approved'
     assert @group.memberships.where(user_id: @user).exists?
   end
 end
